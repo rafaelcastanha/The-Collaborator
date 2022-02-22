@@ -1,0 +1,106 @@
+{
+
+#Compare co-authorship between two authors using GOOGLE SCHOLAR
+
+#Package/Library
+
+install.packages('scholar')
+install.packages('RVenn')
+install.packages('tidyr')
+install.packages('stringr')
+library('scholar')
+library('tidyr')
+library('RVenn')
+library('stringr')
+
+#Author's ID and Coauthors list
+
+id<-readline("Digite o ID do pesquisador 1:")
+
+authorlist<-scholar::get_publications(id)$author
+author<-scholar::get_profile(id)$name
+
+id2<-readline("Digite o ID do pesquisador 2:")
+
+authorlist_2<-scholar::get_publications(id2)$author
+author_2<-scholar::get_profile(id2)$name
+
+#coauthors cardinality
+
+position_autor1<-author_position(authorlist, author)
+position_autor2<-author_position(authorlist_2, author_2)
+
+#LIST to DF
+
+df<-data.frame(authorlist)
+coautorias_autor1<-separate(df, col=authorlist, into=c('1º_Author', '2º_Author', '3º_Author', '4º_Author', 'et.al'), sep=',')
+coauthors_1<-coautorias_autor1
+
+df2<-data.frame(authorlist_2)
+coautorias_autor2<-separate(df2, col=authorlist_2, into=c('1º_Author', '2º_Author', '3º_Author', '4º_Author', 'et.al'), sep=',')
+coauthors_2<-coautorias_autor2
+
+#Converting to RVenn objects
+
+x=Venn(coautorias_autor1)
+y=Venn(coautorias_autor2)
+
+#Authorship uniques
+
+collab_1<-str_trim(tolower(unite(x)))
+collab_1[collab_1=="..."|collab_1==" ..."]<-NA
+collab_1<-collab_1[!is.na(collab_1)]
+collab_1<-unique(collab_1)
+collab_2<-str_trim(tolower(unite(y)))
+collab_2[collab_2=="..."|collab_2==" ..."]<-NA
+collab_2<-collab_2[!is.na(collab_2)]
+collab_2<-unique(collab_2)
+
+#Coauthorships in commun
+
+collaboration<-str_trim(unique(tolower(intersect(collab_1, collab_2))))
+collaboration[collaboration=="..."|collaboration==" ..."]<-NA
+collaboration<-collaboration[!is.na(collaboration)]
+collab_commun<-length(collaboration)
+
+#Frequência de coautoria
+
+artigo_1<-get_publications(id)
+artigo_2<-get_publications(id2)
+get1<-str_trim(unique(tolower(artigo_1$title)))
+get1<-gsub("\\.", "", get1)
+get1<-unique(get1)
+get2<-str_trim(unique(tolower(artigo_2$title)))
+get2<-gsub("\\.", "", get2)
+get2<-unique(get2)
+docs_collab<-intersect(get1, get2)
+freq_collab<-length(docs_collab)
+
+#Quantidade de documentos e posições
+
+docs<-c(length(get1),length(get2))
+docs<-as.data.frame(docs, header=TRUE)
+rownames(docs)<-c(author, author_2)
+first<-table(position_autor1$Position)
+first<-table(position_autor1$Position)[names(table(position_autor1$Position)) == 1]
+first2<-table(position_autor2$Position)
+first2<-table(position_autor2$Position)[names(table(position_autor2$Position)) == 1]
+aux<-c("1º Author")
+docs[,aux]<-c(first,first2)
+aux2<-c("Coauthors")
+docs[,aux2]<-c((length(collab_1)-1),(length(collab_2)-1))
+summary<-docs
+
+#COMANDOS
+
+#summary = summary
+#coauthors_1 = order of authors by author 1 document
+#coauthors_2 = order of authors by author 2 document
+#collab_1 = author 1 and your coauthors
+#collab_2 = author 2 and your coauthors
+#collaboration = common co-authors between authors 1 and 2
+#collab_commun = count of authors in common (including id1 and id2)
+#docs_collab = co-authored documents between author 1 and 2
+#freq_collab = count of co-authored documents
+
+}
